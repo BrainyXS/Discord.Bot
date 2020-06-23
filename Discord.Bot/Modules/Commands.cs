@@ -1,22 +1,12 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
-using Discord.Audio;
 using Discord.Commands;
 using Discord.WebSocket;
-using Victoria;
 
 namespace Discord.Bot.Modules
 {
     public class Commands : ModuleBase<SocketCommandContext>
     {
-        private readonly LavaNode _player;
-
-        public Commands(LavaNode node)
-        {
-            _player = node;
-        }
 
         [Command("test")]
         public async Task Test()
@@ -51,55 +41,6 @@ namespace Discord.Bot.Modules
             }
         }
 
-        [Command("join", RunMode = RunMode.Async)]
-        public async Task join(IVoiceChannel channel = null)
-        {
-            await Context.Message.DeleteAsync();
-            channel ??= (Context.User as IGuildUser)?.VoiceChannel;
-            if (channel != null)
-            {
-                var audioClient = await channel.ConnectAsync();
-                ;
-
-                var path = "E:\\Manuel\\Videos\\musics\\Animal Crossing - Bubblegum K.K. [Remix].mp3";
-                CreateStream(path);
-                using (var ffmpeg = CreateStream(path))
-                    using (var output = ffmpeg.StandardOutput.BaseStream)
-                        using (var discord = audioClient.CreatePCMStream(AudioApplication.Mixed))
-                        {
-                            try
-                            {
-                                await output.CopyToAsync(discord);
-                            }
-                            finally
-                            {
-                                await discord.FlushAsync();
-                                await audioClient.StopAsync();
-                            }
-                        }
-            }
-        }
-
-
-        [Command("leave")]
-        [Alias("stop")]
-        public async Task stop()
-        {
-            await Context.Message.DeleteAsync();
-            var channel = (Context.User as IGuildUser)?.VoiceChannel;
-            await channel.DisconnectAsync();
-        }
-
-
-        private static Process CreateStream(string path)
-        {
-            return Process.Start(new ProcessStartInfo
-            {
-                FileName = "ffmpeg",
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-            });
-        }
+        
     }
 }

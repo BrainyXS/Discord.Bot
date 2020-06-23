@@ -1,11 +1,8 @@
 ﻿ using System;
  using System.Reflection;
- using System.Security.Authentication.ExtendedProtection;
  using System.Threading.Tasks;
- using Discord;
  using Discord.Commands;
  using Discord.WebSocket;
- using Discord.Audio;
  using Microsoft.Extensions.DependencyInjection;
  using Victoria;
 
@@ -16,7 +13,7 @@
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _service;
-        private string token = "NzI0NjY4OTU4ODIwNjYzNDIy.XvDlTw.9Lo2ob1x_07l5YdXmp_cCKpYMws";
+        private string token = Secret.getToken;
         static void Main(string[] args)
         {
             new Program().RunBotAsync().GetAwaiter().GetResult();
@@ -28,7 +25,7 @@
             _client = new DiscordSocketClient();
             _commands = new CommandService();
             _service = ConfigureServices();
-            
+            _client.Ready += Ready;
             _client.Log += ClientLog;
 
             await RegisterCommandsAsync();
@@ -38,6 +35,14 @@
 
             await Task.Delay(-1);
         }
+
+        private async Task Ready()
+        {
+            var node = _service.GetService(typeof(LavaNode)) as LavaNode;
+            await node.ConnectAsync();
+            Console.WriteLine("Music Connection is Ready");
+        }
+
 
         private Task ClientLog(LogMessage arg)
         {
@@ -74,7 +79,9 @@
         {
             return new ServiceCollection()
                 .AddSingleton<DiscordSocketClient>()
-                .AddSingleton<LavaNode>().BuildServiceProvider();
+                .AddSingleton(_client).AddSingleton(_commands)
+                .AddSingleton<LavaNode>()
+                .AddSingleton<LavaConfig>().BuildServiceProvider();
         }
         
     }
