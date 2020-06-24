@@ -34,8 +34,8 @@ namespace Discord.Bot.Modules
 
                 try
                 {
-                    var response = await _node.SearchYouTubeAsync("Apache 207 Roller");
-                    var song = response.Tracks.First();
+                    var response = await _node.SearchYouTubeAsync("Apache 207 Kein Problem");
+                    var song = response.Tracks.First(x => x != null);
                     if (song == null)
                     {
                         await ReplyAsync("Kein passender Song gefunden");

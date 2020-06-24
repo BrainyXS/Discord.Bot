@@ -15,6 +15,7 @@
         private CommandService _commands;
         private IServiceProvider _service;
         private string token = Secret.getToken;
+        private Random _rnd;
         static void Main(string[] args)
         {
             new Program().RunBotAsync().GetAwaiter().GetResult();
@@ -23,6 +24,7 @@
         }
         public async Task RunBotAsync()
         {
+            _rnd = new Random();
             _client = new DiscordSocketClient();
             _commands = new CommandService();
             _service = ConfigureServices();
@@ -41,8 +43,8 @@
         {
             var node = _service.GetService(typeof(LavaNode)) as LavaNode;
             await node.ConnectAsync();
-            Console.WriteLine("Music Connection is Ready");
-            await _client.SetGameAsync("Werde von Brainy gewartet");
+            Console.WriteLine($"Music Connection is Ready with state {node.IsConnected}");
+            await _client.SetGameAsync("Geht auf brainyxs.com");
             Console.WriteLine("Logged in as " + _client.CurrentUser.Username);
             var message = await (_client.GetChannel(708713001141928079) as IMessageChannel).SendMessageAsync("Hey :D Ich wurde soeben hochgefahren :D <:BrainyXS:709125859788980235>");
             Discord.UserExtensions.SendMessageAsync(_client.Guilds.First().GetUser(382248892101558274), "Hallo Brainy, ich bin Online");
@@ -69,13 +71,14 @@
         {
             var message = arg as SocketUserMessage;
             var context = new SocketCommandContext(_client, message);
+
             if (message != null && message.Author.IsBot)
             {
                 return;
             }
 
             int argPos = 0;
-            if (message.HasStringPrefix("/", ref argPos))
+            if (message.HasStringPrefix("", ref argPos))
             {
                 var result = await _commands.ExecuteAsync(context, argPos, _service);
                 if (!result.IsSuccess)

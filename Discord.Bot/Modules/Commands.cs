@@ -8,7 +8,6 @@ namespace Discord.Bot.Modules
 {
     public class Commands : ModuleBase<SocketCommandContext>
     {
-
         [Command("test")]
         public async Task Test()
         {
@@ -26,8 +25,8 @@ namespace Discord.Bot.Modules
                 "Bitte verzieh dich mit saas, soos, sonst irgendeiner Youtube-Kacke Sprache, ich pack das null! ~Huebi, 2020");
         }
 
-        [Command("ban")]
-        public async Task ban(string arg)
+        [Command("/ban")]
+        public async Task ban([Remainder] string arg)
         {
             var user = Context.User as SocketGuildUser;
             var role = (Context.User as IGuildUser).Guild.Roles.Single(
@@ -38,21 +37,50 @@ namespace Discord.Bot.Modules
             {
                 await Context.Message.DeleteAsync();
                 await ReplyAsync(
-                    "ALDA, CHILL DEINE BASE \n DENKST DU, DU BIST BRAINY ODER WIE?\n DAS KANNSZ DU JETZT ECHT NICHT BRINGEN!!");
+                    "ALDA, CHILL DEINE BASE \n DENKST DU, DU BIST BRAINY ODER WIE?\n DAS KANNSt DU JETZT ECHT NICHT BRINGEN!!");
             }
         }
 
         [Command("dm")]
-        public async Task dm(ulong id, string message)
+        public async Task dm(string id, [Remainder] string message)
         {
-            if (Context.User.Username == "BrainyXS")
+            if (Context.User.Username == "BrainyXS" || Context.User.Username == "Darthsven")
             {
-                var user = Context.Guild.GetUser(id);
+                var user = Context.Message.MentionedUsers.First();
+                var eb = new EmbedBuilder();
+                eb.WithDescription($"Nachricht an {user.Username} gesendet (von {Context.User.Username})");
                 await UserExtensions.SendMessageAsync(user, message);
                 await Context.Message.DeleteAsync();
+                var ms = await ReplyAsync("", false, eb.Build());
+
+                var console = Context.Guild.GetTextChannel(424673909531738113);
+                var cm = new EmbedBuilder();
+                cm.WithTitle($"Nachricht von {Context.User.Username} an {user.Username}");
+                cm.WithDescription(message);
+                console.SendMessageAsync("", false, cm.Build());
+                for (int i = 5; i > 0; i--)
+                {
+                    await Task.Delay(1500);
+                    await ms.ModifyAsync(properties => { properties.Content = i.ToString();});
+                }
+
+                await Task.Delay(1500);
+                await ms.DeleteAsync();
             }
         }
 
-
+        [Command("mob")]
+        public async Task mob([Remainder]string name)
+        {
+            if (name.ToLower().Contains("kaiser")||name == "Brainy" || name == "BrainyXS" || name.ToLower() == "manuel" || name.ToLower().Contains("brainy") || Context.Message.MentionedUsers.Contains(Context.Guild.GetUser(382248892101558274)))
+            {
+                
+                name = Context.User.Username;
+            }
+            var e = new EmbedBuilder();
+            e.WithDescription($"{name} wird von allen gemobbt.\nKeiner mag {name}\nGeh dich vergraben, {name}\n");
+           await ReplyAsync("", false, e.Build());
+           
+        }
     }
 }
