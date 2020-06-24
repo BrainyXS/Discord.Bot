@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -41,6 +42,17 @@ namespace Discord.Bot.Modules
             }
         }
 
-        
+        [Command("dm")]
+        public async Task dm(ulong id, string message)
+        {
+            if (Context.User.Username == "BrainyXS")
+            {
+                var user = Context.Guild.GetUser(id);
+                await UserExtensions.SendMessageAsync(user, message);
+                await Context.Message.DeleteAsync();
+            }
+        }
+
+
     }
 }

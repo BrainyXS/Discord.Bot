@@ -1,4 +1,5 @@
 ﻿ using System;
+ using System.Linq;
  using System.Reflection;
  using System.Threading.Tasks;
  using Discord.Commands;
@@ -41,6 +42,14 @@
             var node = _service.GetService(typeof(LavaNode)) as LavaNode;
             await node.ConnectAsync();
             Console.WriteLine("Music Connection is Ready");
+            await _client.SetGameAsync("Werde von Brainy gewartet");
+            Console.WriteLine("Logged in as " + _client.CurrentUser.Username);
+            var message = await (_client.GetChannel(708713001141928079) as IMessageChannel).SendMessageAsync("Hey :D Ich wurde soeben hochgefahren :D <:BrainyXS:709125859788980235>");
+            Discord.UserExtensions.SendMessageAsync(_client.Guilds.First().GetUser(382248892101558274), "Hallo Brainy, ich bin Online");
+            await Task.Delay(15000);
+            
+            await message.DeleteAsync();
+
         }
 
 
