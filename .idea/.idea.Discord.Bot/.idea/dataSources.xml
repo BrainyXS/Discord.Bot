@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="BrainyXS Discord DB" uuid="7c5891de-0ea2-4525-8e8e-5f87a46d4648">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://musibuda.mysql.db.hostpoint.ch:3306/musibuda_brainyxs</jdbc-url>
+    </data-source>
+  </component>
+</project>

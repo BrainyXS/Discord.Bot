@@ -1,57 +1,72 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord.Audio;
 using Discord.Commands;
 using Discord.WebSocket;
 using Victoria;
+using Victoria.Enums;
+using Victoria.EventArgs;
 
 namespace Discord.Bot.Modules
 {
     public class MusicModule : ModuleBase<SocketCommandContext>
     {
         private readonly LavaNode _node;
+        private readonly QueueManager _manager;
 
-        public MusicModule(LavaNode node)
+        public MusicModule(LavaNode node, QueueManager manager)
         {
             _node = node;
-        }
+            _manager = manager;
         
+    }
 
-        [Command("play")]
-        public async Task Play(string args)
+        [Command("Add")]
+        [Alias("Play")]
+        public async Task Add([Remainder] string args)
         {
-            var i = _node.IsConnected;
-
-            await Context.Message.DeleteAsync();
             var channel = (Context.User as IGuildUser)?.VoiceChannel;
-            if (channel != null)
+            var song = await _node.SearchYouTubeAsync(args);
+            var track = song.Tracks.First();
+            _manager.Songs.Add(track);
+            _manager.Channel = Context.Channel;
+            _manager.Guild = Context.Guild;
+            await _node.JoinAsync(channel);
+            if (_node.HasPlayer(Context.Guild))
             {
-                await _node.JoinAsync(channel);
-                var search = args;
-
-
-                try
+                var p = _node.GetPlayer(Context.Guild);
+                if (p.PlayerState != PlayerState.Playing)
                 {
-                    var response = await _node.SearchYouTubeAsync("Apache 207 Kein Problem");
-                    var song = response.Tracks.First(x => x != null);
-                    if (song == null)
-                    {
-                        await ReplyAsync("Kein passender Song gefunden");
-                        return;
-                    }
+                    await p.PlayAsync(track);
+                }
 
-                    await ReplyAsync("Starte song: " + song.Title);
-                    var player = _node.GetPlayer(Context.Guild);
-                    await player.PlayAsync(song);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    await _node.LeaveAsync(channel);
-                }
+                var e = new EmbedBuilder();
+                e.WithDescription(track.Title);
+                e.Color = Color.Gold;
+                var msg = await ReplyAsync(Context.User.Username, false, e.Build());
+                await Task.Delay(6000);
+                await msg.DeleteAsync();
             }
+        }
+
+        [Command("Clear")]
+        public async Task Clear()
+        {
+            _manager.Songs.Clear();
+            await _node.GetPlayer(Context.Guild).StopAsync();
+            var e = new EmbedBuilder();
+            e.Description = "Warteschlange gelöscht";
+            e.Color = Color.Red;
+
+            var msg = await ReplyAsync("", false, e.Build());
+            await Task.Delay(6000);
+            await msg.DeleteAsync();
+        }
+
+        [Command("Skip")]
+        public async Task Skip()
+        {
+            await _node.GetPlayer(Context.Guild).StopAsync();
         }
 
 
