@@ -1,5 +1,7 @@
-﻿using System.Linq;
-using System.Security.Cryptography.X509Certificates;
+﻿using System;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -8,6 +10,7 @@ namespace Discord.Bot.Modules
 {
     public class Commands : ModuleBase<SocketCommandContext>
     {
+        
         [Command("test")]
         public async Task Test()
         {
@@ -15,6 +18,16 @@ namespace Discord.Bot.Modules
             {
                 await ReplyAsync("test erfolgreich, Ich bin Online :D");
                 await Context.Message.DeleteAsync();
+            }
+        }
+
+        [Command("tell")]
+        public async Task Tell([Remainder] string msg)
+        {
+            if (Context.User.Username == "BrainyXS")
+            {
+                await Context.Message.DeleteAsync();
+                await ReplyAsync(msg);
             }
         }
 
@@ -61,7 +74,7 @@ namespace Discord.Bot.Modules
                 for (int i = 5; i > 0; i--)
                 {
                     await Task.Delay(1500);
-                    await ms.ModifyAsync(properties => { properties.Content = i.ToString();});
+                    await ms.ModifyAsync(properties => { properties.Content = i.ToString(); });
                 }
 
                 await Task.Delay(1500);
@@ -70,17 +83,43 @@ namespace Discord.Bot.Modules
         }
 
         [Command("mob")]
-        public async Task mob([Remainder]string name)
+        public async Task mob([Remainder] string name)
         {
-            if (name.ToLower().Contains("kaiser")||name == "Brainy" || name == "BrainyXS" || name.ToLower() == "manuel" || name.ToLower().Contains("brainy") || Context.Message.MentionedUsers.Contains(Context.Guild.GetUser(382248892101558274)))
+            if (Context.User.Username != "BrainyXS")
             {
-                
-                name = Context.User.Username;
+                var sb = new StringBuilder();
+                foreach (var c in name.ToCharArray())
+                {
+                    if (c != '*')
+                    {
+                        sb.Append(c);
+                    }
+                }
+
+                name = sb.ToString();
+                if (name.ToLower().Contains("kaiser") || name == "Brainy" || name == "BrainyXS" ||
+                    name.ToLower() == "manuel" || name.ToLower().Contains("brainy") || name.ToLower().Contains("manu")|| name.ToLower().Contains("gehirny")||
+                    Context.Message.MentionedUsers.Contains(Context.Guild.GetUser(382248892101558274)))
+                {
+                    name = Context.User.Username;
+                }
             }
+
             var e = new EmbedBuilder();
             e.WithDescription($"{name} wird von allen gemobbt.\nKeiner mag {name}\nGeh dich vergraben, {name}\n");
-           await ReplyAsync("", false, e.Build());
-           
+            await ReplyAsync("", false, e.Build());
+        }
+
+        [Command("meme")]
+        public async Task Meme()
+        {
+            var client = new HttpClient();
+            var st = await client.GetStringAsync("https://meme-api.herokuapp.com/gimme");
+            st = st.Substring(st.IndexOf("url\":\"") + 6);
+            var array = st.Split("\",\"nsfw\"");
+            await ReplyAsync(array[0]);
+            
+            
         }
     }
 }
