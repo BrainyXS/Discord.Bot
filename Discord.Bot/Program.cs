@@ -28,11 +28,9 @@ namespace Discord.Bot
         }
 
         public async Task RunBotAsync()
-
         {
             Console.WriteLine("Starting Lavalink");
-            System.Diagnostics.Process.Start("CMD.exe",
-                "/C java -jar C:\\Users\\Manuel\\RiderProjects\\Discord.Bot\\Discord.Bot\\bin\\Debug\\netcoreapp3.1\\Lavalink.jar");
+            System.Diagnostics.Process.Start("CMD.exe", Secret.GetLavaLink());
 
             await Task.Delay(10000);
             Console.WriteLine("Starting Bot");

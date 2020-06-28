@@ -23,6 +23,7 @@ namespace Discord.Bot.Modules
         [Command("ShowPlaylists")]
         public async Task SaveQueue()
         {
+            var output = string.Empty;
             using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
             {
                 using (MySqlCommand command = new MySqlCommand("SELECT * FROM Playlist", connection))
@@ -32,17 +33,29 @@ namespace Discord.Bot.Modules
                     {
                         while (reader.Read())
                         {
-                            await ReplyAsync(
-                                $"{reader[0]}) \t Name: {reader[1]} \t User: {Context.Guild.GetUser(ulong.Parse(reader[2].ToString())).Username}");
+                            output += 
+                                $"{reader[0]}) \t Name: {reader[1]} \t User: {Context.Guild.GetUser(ulong.Parse(reader[2].ToString())).Username}\n";
                         }
                     }
                 }
             }
+            var eb = new EmbedBuilder();
+            eb.WithDescription(output);
+            eb.WithColor(Color.Blue);
+            await ReplyAsync("", false, eb.Build());
         }
 
         [Command("SaveQueue")]
-        public async Task SaveCurrentQueue(string name)
+        public async Task SaveCurrentQueue([Remainder] string name)
         {
+            if (_manager.Songs.Count == 0)
+            {
+                var eb = new EmbedBuilder();
+                eb.WithColor(Color.Red);
+                eb.WithDescription("Die Warteschlange ist aktuell leer");
+                await ReplyAsync("", false, eb.Build());
+                return;
+            }
             IList<ulong> userWithPlaylist = new List<ulong>();
             using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
             {
