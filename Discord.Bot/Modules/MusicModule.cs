@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -45,9 +46,38 @@ namespace Discord.Bot.Modules
             await ReplyAsync("", false, eb.Build());
         }
 
+        [Command("DeleteList")]
+        public async Task Delete(int id)
+        {
+            
+            using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
+            {
+                using (MySqlCommand command = new MySqlCommand($"DELETE FROM Playlist WHERE PlaylistID = {id} AND User_ID = {Context.User.Id}", connection))
+                {
+                    connection.Open();
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        { 
+                        }
+                    }
+                }
+            }
+
+            SaveQueue();
+        }
+
         [Command("SaveQueue")]
         public async Task SaveCurrentQueue([Remainder] string name)
         {
+            if (name.ToLower().Contains("drop") || name.ToLower().Contains("'") || name.Contains(";") || name.Contains("delete"))
+            {
+                var e = new EmbedBuilder();
+                e.WithColor(Color.Red);
+                e.WithDescription("Unzuläsiges Zeichen gefunden");
+                await ReplyAsync("", false, e.Build());
+                return;
+            }
             if (_manager.Songs.Count == 0)
             {
                 var eb = new EmbedBuilder();
@@ -139,20 +169,30 @@ namespace Discord.Bot.Modules
         [Alias("LoadPlaylist")]
         public async Task AddPlaylistToQueue(int id)
         {
-            using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
+            try
             {
-                using (MySqlCommand command =
-                    new MySqlCommand($"SELECT * FROM Song WHERE FK_PlaylistID = {id}", connection))
+                using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
                 {
-                    connection.Open();
-                    using (MySqlDataReader reader = command.ExecuteReader())
+                    using (MySqlCommand command =
+                        new MySqlCommand($"SELECT * FROM Song WHERE FK_PlaylistID = {id}", connection))
                     {
-                        while (reader.Read())
+                        connection.Open();
+                        using (MySqlDataReader reader = command.ExecuteReader())
                         {
-                            await Add(reader[1].ToString());
+                            while (reader.Read())
+                            {
+                                await Add(reader[1].ToString());
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                var eb = new EmbedBuilder();
+                eb.WithColor(Color.Red);
+                eb.WithDescription("Es ist ein Fehler aufgetreten");
+                await ReplyAsync("", false, eb.Build());
             }
         }
 
