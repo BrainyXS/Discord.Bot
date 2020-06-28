@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
+using Discord.WebSocket;
 using MySql.Data.MySqlClient;
 using Victoria;
 using Victoria.Enums;
@@ -41,8 +43,27 @@ namespace Discord.Bot.Modules
         [Command("SaveQueue")]
         public async Task SaveCurrentQueue(string name)
         {
+            IList<ulong> userWithPlaylist = new List<ulong>();
+            using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
+            {
+                using (MySqlCommand command = new MySqlCommand("SELECT * FROM Playlist", connection))
+                {
+                    connection.Open();
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                           userWithPlaylist.Add(ulong.Parse(reader[2].ToString()));
+                        }
+                    }
+                }
+            }
+            
+            
+            var user = Context.User as SocketGuildUser;
+            var role = (user as IGuildUser).Guild.Roles.FirstOrDefault(x => x.Name == "Ehrenbürger");
             var lid = 0;
-            if (Context.User.Username == "BrainyXS")
+            if (Context.User.Username == "BrainyXS" || (user.Roles.Contains(role) && userWithPlaylist.Count(x => x == user.Id) < 3) || userWithPlaylist.All(x => x != user.Id))
             {
                 using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
                 {
@@ -56,8 +77,6 @@ namespace Discord.Bot.Modules
                         {
                             reader.Read();
                         }
-
-                        ReplyAsync("Gespeichert!");
                     }
 
 
@@ -92,6 +111,13 @@ namespace Discord.Bot.Modules
                         }
                     }
                 }
+            }
+            else
+            {
+                var e = new EmbedBuilder();
+                e.WithColor(Color.Red);
+                e.WithDescription("Du hast bereits die Maximale Anzahl an Playlists erreicht!");
+                await ReplyAsync("", false, e.Build());
             }
         }
 
