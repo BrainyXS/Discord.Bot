@@ -1,13 +1,9 @@
-﻿using System;
-using System.Data.Common;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using Discord.WebSocket;
-using System.Data.SqlClient;
+using MySql.Data.MySqlClient;
 using Victoria;
 using Victoria.Enums;
-using Victoria.EventArgs;
 
 namespace Discord.Bot.Modules
 {
@@ -22,27 +18,103 @@ namespace Discord.Bot.Modules
             _manager = manager;
         }
 
-        [Command("SaveQueue")]
+        [Command("ShowPlaylists")]
         public async Task SaveQueue()
         {
-            var output = string.Empty;
-            var sql = Secret.GetSqlConnectionString();
-            using (SqlConnection connection = new SqlConnection(sql.ConnectionString))
+            using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
             {
-                using (SqlCommand command = new SqlCommand("SELECT * FROM Playlist", connection))
+                using (MySqlCommand command = new MySqlCommand("SELECT * FROM Playlist", connection))
                 {
                     connection.Open();
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    using (MySqlDataReader reader = command.ExecuteReader())
                     {
-                
                         while (reader.Read())
                         {
-                            output = $"{output}\n{reader.GetString(0)} {reader.GetString(1)}";
+                            await ReplyAsync(
+                                $"{reader[0]}) \t Name: {reader[1]} \t User: {Context.Guild.GetUser(ulong.Parse(reader[2].ToString())).Username}");
                         }
                     }
                 }
             }
-            Console.WriteLine($"\n\n\n{output}\n\n\n");
+        }
+
+        [Command("SaveQueue")]
+        public async Task SaveCurrentQueue(string name)
+        {
+            var lid = 0;
+            if (Context.User.Username == "BrainyXS")
+            {
+                using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
+                {
+                    var id = Context.User.Id;
+                    using (MySqlCommand command =
+                        new MySqlCommand($"INSERT INTO Playlist (PlaylistName, User_ID) VALUES ('{name}', {id})",
+                            connection))
+                    {
+                        connection.Open();
+                        using (var reader = command.ExecuteReader())
+                        {
+                            reader.Read();
+                        }
+
+                        ReplyAsync("Gespeichert!");
+                    }
+
+
+                    using (MySqlCommand command =
+                        new MySqlCommand($"SELECT PlaylistID FROM Playlist WHERE PlaylistName = '{name}'",
+                            connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            reader.Read();
+                            lid = int.Parse(reader[0].ToString());
+                        }
+
+                        ReplyAsync("Gespeichert!");
+                    }
+                }
+
+                using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
+                {
+                    connection.Open();
+                    foreach (var lavaTrack in _manager.Songs)
+                    {
+                        using (var command =
+                            new MySqlCommand(
+                                $"INSERT INTO Song (Title, FK_PlaylistID) VALUES ('{lavaTrack.Title}', {lid})",
+                                connection))
+                        {
+                            using (var reader = command.ExecuteReader())
+                            {
+                                reader.Read();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        [Command("LoadList")]
+        [Alias("LoadPlaylist")]
+        public async Task AddPlaylistToQueue(int id)
+        {
+            using (var connection = new MySqlConnection(Secret.GetSqlConnectionString()))
+            {
+                using (MySqlCommand command =
+                    new MySqlCommand($"SELECT * FROM Song WHERE FK_PlaylistID = {id}", connection))
+                {
+                    connection.Open();
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            await Add(reader[1].ToString());
+                        }
+                    }
+                }
+            }
         }
 
         [Command("Add")]
@@ -55,6 +127,7 @@ namespace Discord.Bot.Modules
             _manager.Songs.Add(track);
             _manager.Channel = Context.Channel;
             _manager.Guild = Context.Guild;
+
             await _node.JoinAsync(channel);
             if (_node.HasPlayer(Context.Guild))
             {
@@ -67,9 +140,20 @@ namespace Discord.Bot.Modules
                 var e = new EmbedBuilder();
                 e.WithDescription(track.Title);
                 e.Color = Color.Gold;
-                var msg = await ReplyAsync(Context.User.Username, false, e.Build());
-                await Task.Delay(6000);
-                await msg.DeleteAsync();
+                var msg = await ReplyAsync("", false, e.Build());
+            }
+        }
+
+        [Command("pause")]
+        public async Task Pause()
+        {
+            if (_node.GetPlayer(Context.Guild).PlayerState == PlayerState.Paused)
+            {
+                await _node.GetPlayer(Context.Guild).ResumeAsync();
+            }
+            else
+            {
+                await _node.GetPlayer(Context.Guild).PauseAsync();
             }
         }
 
@@ -81,7 +165,6 @@ namespace Discord.Bot.Modules
             var e = new EmbedBuilder();
             e.Description = "Warteschlange gelöscht";
             e.Color = Color.Red;
-
             var msg = await ReplyAsync("", false, e.Build());
             await Task.Delay(6000);
             await msg.DeleteAsync();
@@ -100,6 +183,12 @@ namespace Discord.Bot.Modules
         {
             await Context.Message.DeleteAsync();
             await _node.LeaveAsync((Context.User as IGuildUser)?.VoiceChannel);
+            var e = new EmbedBuilder();
+            e.WithColor(Color.Red);
+            e.WithDescription("Channel verlassen");
+            var m = await ReplyAsync("", false, e.Build());
+            await Task.Delay(5000);
+            await m.DeleteAsync();
         }
     }
 }
