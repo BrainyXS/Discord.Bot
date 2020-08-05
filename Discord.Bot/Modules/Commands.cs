@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -85,28 +86,29 @@ namespace Discord.Bot.Modules
         [Command("mob")]
         public async Task mob([Remainder] string name)
         {
+            var toMob = name;
             if (Context.User.Username != "BrainyXS")
             {
                 var sb = new StringBuilder();
                 foreach (var c in name.ToCharArray())
                 {
-                    if (c != '*')
+                    if (c != '*' && c != ' ' && c != '-')
                     {
                         sb.Append(c);
                     }
                 }
 
                 name = sb.ToString();
-                if (name.ToLower().Contains("kaiser") || name == "Brainy" || name == "BrainyXS" ||
-                    name.ToLower() == "manuel" || name.ToLower().Contains("brainy") || name.ToLower().Contains("manu")|| name.ToLower().Contains("gehirny")||
+                if (name.ToLower().Contains("kaiser") || name == "Brainy" || name == "BrainyXS" || name.ToLower().Replace('l', 'i').Contains("brainy") ||
+                    name.ToLower() == "manuel" || name.ToLower().Contains("brainy") || name.ToLower().Contains("manu")|| name.ToLower().Contains("gehirn")||
                     Context.Message.MentionedUsers.Contains(Context.Guild.GetUser(382248892101558274)))
                 {
-                    name = Context.User.Username;
+                    toMob = Context.User.Username;
                 }
             }
 
             var e = new EmbedBuilder();
-            e.WithDescription($"{name} wird von allen gemobbt.\nKeiner mag {name}\nGeh dich vergraben, {name}\n");
+            e.WithDescription($"{toMob} wird von allen gemobbt.\nKeiner mag {toMob}\nGeh dich vergraben, {toMob}\n");
             await ReplyAsync("", false, e.Build());
         }
 
@@ -118,8 +120,45 @@ namespace Discord.Bot.Modules
             st = st.Substring(st.IndexOf("url\":\"") + 6);
             var array = st.Split("\",\"nsfw\"");
             await ReplyAsync(array[0]);
-            
-            
+        }
+
+        [Command("search")]
+        public async Task SearchAsync([Remainder] string query)
+        {
+            if (query.ToLower().Contains("brainy") || query.ToLower().Contains("manu") || query.ToLower().Contains("gehirn"))
+            {
+                await ReplyAsync("Dafür wurde der Bot nicht gemacht!");
+                return;
+            }
+        try
+            {
+                query = query.Replace(' ', '+');
+                var client = new HttpClient();
+                var responseTask = client.GetAsync($"https://www.google.com/search?q={query}");
+                var message = await ReplyAsync("Suche läuft...");
+                var response = await responseTask;
+                var responseString = await response.Content.ReadAsStringAsync();
+                var array = responseString.Split("<div class=\"BNeawe iBp4i AP7Wnd\">");
+                var resp1 = array[^1];
+                array = resp1.Split("<");
+                var ans = array[0];
+                await message.DeleteAsync();
+                await ReplyAsync(ans);
+            }
+            catch (Exception e)
+            {
+                ReplyAsync("Nicht gefunden");
+            }
+
+        }
+        
+        
+        
+
+        [Command("(╯°□°）╯︵ ┻━┻")]
+        public async Task FlipBack()
+        {
+            await ReplyAsync("┬─┬ ノ( ゜-゜ノ)");
         }
     }
 }

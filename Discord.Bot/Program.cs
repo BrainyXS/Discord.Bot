@@ -3,7 +3,9 @@ using System.Collections;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Json;
 using System.Threading.Tasks;
+using System.Timers;
 using Discord.Bot.Modules;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -48,9 +50,10 @@ namespace Discord.Bot
 
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
-
             await Task.Delay(-1);
+
         }
+        
 
         private async Task Trackended(TrackEndedEventArgs arg)
         {
@@ -79,7 +82,7 @@ namespace Discord.Bot
             var node = _service.GetService(typeof(LavaNode)) as LavaNode;
             await node.ConnectAsync();
             Console.WriteLine($"Music Connection is Ready with state {node.IsConnected}");
-            await _client.SetGameAsync("Geht auf brainyxs.com");
+            await _client.SetGameAsync("mit BrainyXS auf Youtube");
             Console.WriteLine("Logged in as " + _client.CurrentUser.Username);
             var message =
                 await (_client.GetChannel(708713001141928079) as IMessageChannel).SendMessageAsync(
